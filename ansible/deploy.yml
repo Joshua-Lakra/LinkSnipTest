@@ -1,0 +1,91 @@
+---
+- name: Deploy LinkSnip Application
+  hosts: linksnip
+  become: yes
+
+  vars:
+    app_dir: /opt/linksnip
+    docker_hub_username: "{{ lookup('env', 'DOCKER_HUB_USERNAME') }}"
+    image_tag: "latest"
+
+  tasks:
+    # ── System Setup ────────────────────────────────────────────────────────
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Install required packages
+      apt:
+        name:
+          - docker.io
+          - docker-compose-plugin
+          - curl
+          - git
+          - python3-pip
+        state: present
+
+    - name: Enable and start Docker
+      systemd:
+        name: docker
+        enabled: yes
+        state: started
+
+    - name: Add ubuntu user to docker group
+      user:
+        name: ubuntu
+        groups: docker
+        append: yes
+
+    # ── App Deployment ──────────────────────────────────────────────────────
+    - name: Create app directory
+      file:
+        path: "{{ app_dir }}"
+        state: directory
+        owner: ubuntu
+        group: ubuntu
+        mode: "0755"
+
+    - name: Copy docker-compose file
+      copy:
+        src: ../docker-compose.yml
+        dest: "{{ app_dir }}/docker-compose.yml"
+        owner: ubuntu
+        group: ubuntu
+        mode: "0644"
+
+    - name: Create .env file
+      copy:
+        content: |
+          REDIS_HOST=redis
+          REDIS_PORT=6379
+          BASE_URL=http://{{ ansible_host }}
+        dest: "{{ app_dir }}/.env"
+        owner: ubuntu
+        mode: "0600"
+
+    - name: Pull latest Docker images
+      community.docker.docker_compose_v2:
+        project_src: "{{ app_dir }}"
+        pull: always
+      become_user: ubuntu
+
+    - name: Start application with docker compose
+      community.docker.docker_compose_v2:
+        project_src: "{{ app_dir }}"
+        state: present
+      become_user: ubuntu
+
+    # ── Health Check ────────────────────────────────────────────────────────
+    - name: Wait for app to be healthy
+      uri:
+        url: "http://localhost:5000/health"
+        status_code: 200
+      register: health_check
+      retries: 10
+      delay: 5
+      until: health_check.status == 200
+
+    - name: Print deployment success
+      debug:
+        msg: "✅ LinkSnip deployed successfully at http://{{ ansible_host }}:5000"
