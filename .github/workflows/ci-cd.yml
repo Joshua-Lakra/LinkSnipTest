@@ -110,7 +110,20 @@ jobs:
           kubectl apply -f k8s/redis-deployment.yaml
           kubectl apply -f k8s/deployment.yaml
           kubectl apply -f k8s/service.yaml
-
+      - name: Debug - Check pod status
+        if: always()
+        run: |
+          echo "=== Pods ==="
+          kubectl get pods -n linksnip
+          echo ""
+          echo "=== Pod Details ==="
+          kubectl describe pods -n linksnip
+          echo ""
+          echo "=== Pod Logs ==="
+          kubectl logs -n linksnip -l app=linksnip-app --tail=50 || true
+          echo ""
+          echo "=== Events ==="
+          kubectl get events -n linksnip --sort-by='.lastTimestamp'
       - name: Wait for rollout
         run: |
           kubectl rollout status deployment/linksnip-app -n linksnip --timeout=120s
