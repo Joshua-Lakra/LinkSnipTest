@@ -147,10 +147,11 @@ async function shorten() {
   if (!url || !/^https?:\\/\\//.test(url)) { err.style.display = 'block'; return; }
   const res = await fetch('/api/shorten', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({url}) });
   const data = await res.json();
-  if (data.short_url) {
-    document.getElementById('short-url').textContent = data.short_url;
+  if (data.code) {
+    const finalUrl = window.location.origin + '/' + data.code;
+    document.getElementById('short-url').textContent = finalUrl;
     result.style.display = 'block';
-    result.onclick = () => { navigator.clipboard.writeText(data.short_url); result.style.borderColor = '#7c3aed'; setTimeout(()=>result.style.borderColor='var(--accent)',1000); };
+    result.onclick = () => { navigator.clipboard.writeText(finalUrl); result.style.borderColor = '#7c3aed'; setTimeout(()=>result.style.borderColor='var(--accent)',1000); };
     loadStats();
   }
 }
@@ -186,7 +187,8 @@ def shorten():
     r.set(f"clicks:{code}", 0)
     r.incr("stats:total_links")
     logger.info(f"Shortened {url} → {code}")
-    return jsonify({"short_url": f"{BASE_URL}/{code}", "code": code})
+    base = BASE_URL if BASE_URL and "example.com" not in BASE_URL else request.host_url.rstrip("/")
+    return jsonify({"short_url": f"{base}/{code}", "code": code})
 
 @app.route("/<code>")
 def redirect_url(code):

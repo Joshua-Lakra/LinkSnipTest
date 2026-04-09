@@ -102,8 +102,7 @@ jobs:
 
       - name: Update image in deployment
         run: |
-          sed -i "s|DOCKER_HUB_USERNAME|${{ secrets.DOCKER_HUB_USERNAME }}|g" k8s/deployment.yaml
-          sed -i "s|IMAGE_TAG|${{ github.run_number }}|g" k8s/deployment.yaml
+          sed -i "s|image: linksnip:v2|image: ${{ secrets.DOCKER_HUB_USERNAME }}/linksnip:${{ github.run_number }}|g" k8s/deployment.yaml
 
       - name: Apply Kubernetes manifests
         run: |

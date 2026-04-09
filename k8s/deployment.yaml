@@ -25,7 +25,8 @@ spec:
     spec:
       containers:
         - name: linksnip
-          image: DOCKER_HUB_USERNAME/linksnip:IMAGE_TAG
+          image: linksnip:v2
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 5000
           env:
