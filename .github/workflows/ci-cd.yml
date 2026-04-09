@@ -88,13 +88,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up kubectl
-        uses: azure/setup-kubectl@v3
+      - name: Create kind cluster
+        uses: helm/kind-action@v1.8.0
+        with:
+          cluster_name: linksnip-cluster
 
-      - name: Configure kubeconfig
+      - name: Load Docker image into kind
         run: |
-          mkdir -p ~/.kube
-          echo "${{ secrets.KUBECONFIG }}" | base64 -d > ~/.kube/config
+          # Pull the image we just built
+          docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/linksnip:${{ github.run_number }}
+          # Load it into kind cluster
+          kind load docker-image ${{ secrets.DOCKER_HUB_USERNAME }}/linksnip:${{ github.run_number }} --name linksnip-cluster
 
       - name: Update image tag in deployment
         run: |
