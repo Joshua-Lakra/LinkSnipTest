@@ -6,12 +6,9 @@ terraform {
       version = "~> 5.0"
     }
   }
-  # Backend: store state in S3 (uncomment and configure)
-  # backend "s3" {
-  #   bucket = "your-terraform-state-bucket"
-  #   key    = "linksnip/terraform.tfstate"
-  #   region = "us-east-1"
-  # }
+  backend "s3" {
+    key = "linksnip/terraform.tfstate"
+  }
 }
 
 provider "aws" {

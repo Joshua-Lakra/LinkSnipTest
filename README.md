@@ -210,4 +210,3 @@ curl -X POST http://localhost:5000/api/shorten \
 # Response:
 # {"short_url": "http://localhost:5000/aB3kR9", "code": "aB3kR9"}
 ```
-Testing

@@ -5,8 +5,8 @@
 
   vars:
     app_dir: /opt/linksnip
-    docker_hub_username: "{{ lookup('env', 'DOCKER_HUB_USERNAME') }}"
-    image_tag: "latest"
+    docker_hub_username: "{{ lookup('env', 'DOCKER_HUB_USERNAME') | default('YOUR_USERNAME', true) }}"
+    image_tag: "{{ lookup('env', 'IMAGE_TAG') | default('latest', true) }}"
 
   tasks:
     # ── System Setup ────────────────────────────────────────────────────────
@@ -46,9 +46,47 @@
         group: ubuntu
         mode: "0755"
 
-    - name: Copy docker-compose file
+    - name: Create docker-compose.yml
       copy:
-        src: ../docker-compose.yml
+        content: |
+          version: "3.9"
+          services:
+            app:
+              image: ${DOCKER_IMAGE}
+              container_name: linksnip-app
+              ports:
+                - "5000:5000"
+              environment:
+                - REDIS_HOST=redis
+                - REDIS_PORT=6379
+                - BASE_URL=${BASE_URL}
+              depends_on:
+                redis:
+                  condition: service_healthy
+              restart: unless-stopped
+              networks:
+                - linksnip-net
+            redis:
+              image: redis:7-alpine
+              container_name: linksnip-redis
+              ports:
+                - "6379:6379"
+              volumes:
+                - redis-data:/data
+              command: redis-server --appendonly yes
+              healthcheck:
+                test: ["CMD", "redis-cli", "ping"]
+                interval: 10s
+                timeout: 5s
+                retries: 5
+              restart: unless-stopped
+              networks:
+                - linksnip-net
+          volumes:
+            redis-data:
+          networks:
+            linksnip-net:
+              driver: bridge
         dest: "{{ app_dir }}/docker-compose.yml"
         owner: ubuntu
         group: ubuntu
@@ -60,6 +98,7 @@
           REDIS_HOST=redis
           REDIS_PORT=6379
           BASE_URL=http://{{ ansible_host }}
+          DOCKER_IMAGE={{ docker_hub_username }}/linksnip:{{ image_tag }}
         dest: "{{ app_dir }}/.env"
         owner: ubuntu
         mode: "0600"
