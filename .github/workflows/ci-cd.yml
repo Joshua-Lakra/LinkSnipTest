@@ -162,7 +162,7 @@ jobs:
 
       - name: Ensure S3 Bucket for Terraform State
         run: |
-          BUCKET_NAME="linksnip-tfstate-${{ steps.account.outputs.id }}"
+          BUCKET_NAME="linksnip-tfstate-ap-south-1-${{ steps.account.outputs.id }}"
           aws s3api head-bucket --bucket "$BUCKET_NAME" 2>/dev/null || \
           aws s3api create-bucket --bucket "$BUCKET_NAME" --region ap-south-1 \
             --create-bucket-configuration LocationConstraint=ap-south-1
@@ -189,7 +189,7 @@ jobs:
       - name: Terraform Init
         working-directory: ./terraform
         run: |
-          BUCKET_NAME="linksnip-tfstate-${{ steps.account.outputs.id }}"
+          BUCKET_NAME="linksnip-tfstate-ap-south-1-${{ steps.account.outputs.id }}"
           terraform init -backend-config="bucket=${BUCKET_NAME}" -backend-config="region=ap-south-1"
 
       - name: Terraform Apply
