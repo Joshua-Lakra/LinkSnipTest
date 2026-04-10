@@ -154,7 +154,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
+          aws-region: ap-south-1
 
       - name: Get AWS Account ID
         id: account
@@ -164,7 +164,8 @@ jobs:
         run: |
           BUCKET_NAME="linksnip-tfstate-${{ steps.account.outputs.id }}"
           aws s3api head-bucket --bucket "$BUCKET_NAME" 2>/dev/null || \
-          aws s3api create-bucket --bucket "$BUCKET_NAME" --region us-east-1
+          aws s3api create-bucket --bucket "$BUCKET_NAME" --region ap-south-1 \
+            --create-bucket-configuration LocationConstraint=ap-south-1
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -189,7 +190,7 @@ jobs:
         working-directory: ./terraform
         run: |
           BUCKET_NAME="linksnip-tfstate-${{ steps.account.outputs.id }}"
-          terraform init -backend-config="bucket=${BUCKET_NAME}" -backend-config="region=us-east-1"
+          terraform init -backend-config="bucket=${BUCKET_NAME}" -backend-config="region=ap-south-1"
 
       - name: Terraform Apply
         working-directory: ./terraform
