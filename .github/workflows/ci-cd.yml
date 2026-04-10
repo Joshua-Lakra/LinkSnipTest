@@ -201,7 +201,19 @@ jobs:
         run: echo "instance_ip=$(terraform output -raw instance_public_ip)" >> $GITHUB_OUTPUT
 
       - name: Trust EC2 SSH Host
-        run: ssh-keyscan -H ${{ steps.tf_out.outputs.instance_ip }} >> ~/.ssh/known_hosts
+        run: |
+          EC2_IP="${{ steps.tf_out.outputs.instance_ip }}"
+          echo "Waiting for SSH to be ready on $EC2_IP..."
+          for i in $(seq 1 36); do
+            if ssh-keyscan -H "$EC2_IP" >> ~/.ssh/known_hosts 2>/dev/null; then
+              echo "SSH is ready!"
+              exit 0
+            fi
+            echo "Attempt $i/36 - SSH not ready yet, retrying in 5s..."
+            sleep 5
+          done
+          echo "ERROR: SSH never became ready on $EC2_IP after 3 minutes."
+          exit 1
 
       - name: Setup Ansible
         run: |
